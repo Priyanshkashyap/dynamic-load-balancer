@@ -1,1 +1,2 @@
 added from application.properties reading various servers so that we dont have to close and reopen the app everytime on adding new servers.used @ConfigurationProperties(prefix = "loadbalancer")
+now we dont even have to read from app.properties now we store it in a hashmap as a model object
