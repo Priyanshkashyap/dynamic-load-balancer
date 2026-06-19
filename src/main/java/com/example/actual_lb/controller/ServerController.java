@@ -31,4 +31,10 @@ public class ServerController {
         return loadBalancerService
                 .getAllServers();
     }
+    @PostMapping("/deregister")
+    public String deregister(@RequestBody RegisterServerRequest request)
+    {
+        loadBalancerService.deregisterServer(request.getUrl());
+        return "Server Deregistered";
+    }
 }
