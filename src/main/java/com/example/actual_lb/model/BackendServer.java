@@ -9,4 +9,5 @@ import lombok.Setter;
 @AllArgsConstructor
 public class BackendServer {
     private String url;
+    private boolean healthy;
 }

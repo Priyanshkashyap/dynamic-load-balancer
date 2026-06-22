@@ -17,7 +17,7 @@ public class LoadBalancerService {
 
     public void registerServer(String url) {
 
-        servers.put(url, new BackendServer(url));
+        servers.put(url, new BackendServer(url,true));
     }
 
     public List<BackendServer> getAllServers() {
@@ -29,7 +29,7 @@ public class LoadBalancerService {
 
     public String getNextServer() {
 
-        List<BackendServer> list = new ArrayList<>(servers.values());
+        List<BackendServer> list = servers.values().stream().filter(BackendServer::isHealthy).toList();// for each server it checks health, Backe
 
         if (list.isEmpty()) {
             throw new RuntimeException(
