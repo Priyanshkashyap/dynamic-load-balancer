@@ -17,7 +17,7 @@ public class LoadBalancerService {
 
     public void registerServer(String url) {
 
-        servers.put(url, new BackendServer(url,true));
+        servers.put(url, new BackendServer(url,true,0));
     }
 
     public List<BackendServer> getAllServers() {
@@ -48,5 +48,25 @@ public class LoadBalancerService {
         } else {
             servers.remove(url);
         }
+    }
+    public BackendServer getLeastLoadedServer() {
+
+        List<BackendServer> healthyServers = servers.values().stream().filter(BackendServer::isHealthy).toList();
+
+        if (healthyServers.isEmpty()) {
+            throw new RuntimeException(
+                    "No healthy servers"
+            );
+        }
+
+        BackendServer best = healthyServers.get(0);
+
+        for (BackendServer server : healthyServers) {
+
+            if (server.getActiveConnections() < best.getActiveConnections()) {
+                best = server;
+            }
+        }
+        return best;
     }
 }

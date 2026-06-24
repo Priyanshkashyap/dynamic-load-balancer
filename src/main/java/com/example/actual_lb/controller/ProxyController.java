@@ -1,5 +1,6 @@
 package com.example.actual_lb.controller;
 
+import com.example.actual_lb.model.BackendServer;
 import com.example.actual_lb.service.LoadBalancerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,20 +21,15 @@ public class ProxyController {
     @GetMapping("/hello")
     public Object forwardRequest() {
 
-        System.out.println(
-                "Received request in LB"
-        );
+        BackendServer server = loadBalancerService.getLeastLoadedServer();
 
-        String server =
-                loadBalancerService.getNextServer();
+        try {
+            server.setActiveConnections(server.getActiveConnections() + 1);
+            return restTemplate.getForObject(server.getUrl() + "/hello", Object.class);
 
-        System.out.println(
-                "Forwarding to " + server
-        );
+        } finally { // Java guarantees this runs whether: result is success or amy exceptions
 
-        return restTemplate.getForObject(
-                server + "/hello",
-                Object.class
-        );
+            server.setActiveConnections(server.getActiveConnections() - 1);
+        }
     }
 }

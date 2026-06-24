@@ -26,12 +26,7 @@ public class ServerController {
 
         return "Server Registered";
     }
-    @GetMapping
-    public Collection<BackendServer> all() {
 
-        return loadBalancerService
-                .getAllServers();
-    }
     @PostMapping("/deregister")
     public String deregister(@RequestBody RegisterServerRequest request)
     {
@@ -40,6 +35,11 @@ public class ServerController {
     }
     @GetMapping
     public List<BackendServer> getServers() {
+
+        return loadBalancerService.getAllServers();
+    }
+    @GetMapping("/stats")
+    public List<BackendServer> stats() {
 
         return loadBalancerService.getAllServers();
     }
