@@ -27,8 +27,8 @@ public class ProxyController {
             server.setActiveConnections(server.getActiveConnections() + 1);
             return restTemplate.getForObject(server.getUrl() + "/hello", Object.class);
 
-        } finally { // Java guarantees this runs whether: result is success or amy exceptions
-
+        } finally { // Java guarantees this runs whether: result is success or any exceptions
+                // after 5ms u get output from that server and this connections ends
             server.setActiveConnections(server.getActiveConnections() - 1);
         }
     }

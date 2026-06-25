@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LoadBalancerService {
     // constructors and objects are only created and injected which new addresses only after running the application
     private final ConcurrentHashMap<String, BackendServer> servers = new ConcurrentHashMap<>();//Normal HashMap is not thread-safe.
-
     private final AtomicInteger counter = new AtomicInteger(0);
 
     public void registerServer(String url) {
@@ -54,9 +53,7 @@ public class LoadBalancerService {
         List<BackendServer> healthyServers = servers.values().stream().filter(BackendServer::isHealthy).toList();
 
         if (healthyServers.isEmpty()) {
-            throw new RuntimeException(
-                    "No healthy servers"
-            );
+            throw new RuntimeException("No healthy servers");
         }
 
         BackendServer best = healthyServers.get(0);
