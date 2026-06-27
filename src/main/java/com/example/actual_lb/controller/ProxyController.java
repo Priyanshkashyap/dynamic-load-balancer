@@ -3,10 +3,10 @@ package com.example.actual_lb.controller;
 import com.example.actual_lb.model.BackendServer;
 import com.example.actual_lb.service.LoadBalancerService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -21,15 +21,58 @@ public class ProxyController {
     @GetMapping("/hello")
     public Object forwardRequest() {
 
-        BackendServer server = loadBalancerService.getLeastLoadedServer();
+        List<BackendServer> servers =
+                loadBalancerService
+                        .getHealthyServers();
 
-        try {
-            server.setActiveConnections(server.getActiveConnections() + 1);
-            return restTemplate.getForObject(server.getUrl() + "/hello", Object.class);
+        Exception lastException = null;
 
-        } finally { // Java guarantees this runs whether: result is success or any exceptions
-                // after 5ms u get output from that server and this connections ends
-            server.setActiveConnections(server.getActiveConnections() - 1);
+        for (
+                BackendServer server
+                : servers
+        ) {
+
+            try {
+
+                server.setActiveConnections(
+                        server.getActiveConnections()
+                                + 1
+                );
+
+                Object response =
+                        restTemplate.getForObject(
+                                server.getUrl()
+                                        + "/hello",
+                                Object.class
+                        );
+
+                loadBalancerService
+                        .onSuccess(server);
+
+                return response;
+
+            }
+
+            catch (Exception e) {
+
+                loadBalancerService
+                        .onFailure(server);
+
+                lastException = e;
+            }
+
+            finally {
+
+                server.setActiveConnections(
+                        server.getActiveConnections()
+                                - 1
+                );
+            }
         }
+
+        throw new RuntimeException(
+                "All servers failed",
+                lastException
+        );
     }
 }
