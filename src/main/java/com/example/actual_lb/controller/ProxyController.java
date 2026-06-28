@@ -1,7 +1,8 @@
 package com.example.actual_lb.controller;
-
+import jakarta.servlet.http.HttpServletRequest;
 import com.example.actual_lb.model.BackendServer;
 import com.example.actual_lb.service.LoadBalancerService;
+import com.example.actual_lb.service.RateLimiterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -18,8 +19,27 @@ public class ProxyController {
     @Autowired
     private LoadBalancerService loadBalancerService;
 
+    @Autowired
+    private RateLimiterService rateLimiterService;
+
     @GetMapping("/hello")
-    public Object forwardRequest() {
+    public Object forwardRequest(
+            HttpServletRequest request // Receive data from the client request coming into your server
+    ) {
+
+        String clientIp =
+                request.getRemoteAddr(); // eturns the IP address of the client that sent the request.
+
+        if (
+                !rateLimiterService
+                        .allowRequest(
+                                clientIp
+                        )
+        ) {
+            throw new RuntimeException(
+                    "429 Too Many Requests"
+            );
+        }
 
         List<BackendServer> servers =
                 loadBalancerService
@@ -51,17 +71,14 @@ public class ProxyController {
 
                 return response;
 
-            }
-
-            catch (Exception e) {
+            } catch (Exception e) {
 
                 loadBalancerService
                         .onFailure(server);
 
                 lastException = e;
-            }
 
-            finally {
+            } finally {
 
                 server.setActiveConnections(
                         server.getActiveConnections()
