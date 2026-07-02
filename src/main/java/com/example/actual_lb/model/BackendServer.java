@@ -12,14 +12,9 @@ import lombok.Setter;
 public class BackendServer {
 
     private String url;
-
     private boolean healthy;
-
     private int activeConnections;
-
     private int failureCount;
-
     private CircuitState circuitState;
-
     private long lastFailureTime;
 }

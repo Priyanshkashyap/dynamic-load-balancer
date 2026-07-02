@@ -33,11 +33,7 @@ public class ServerController {
         loadBalancerService.deregisterServer(request.getUrl());
         return "Server Deregistered";
     }
-    @GetMapping
-    public List<BackendServer> getServers() {
 
-        return loadBalancerService.getAllServers();
-    }
     @GetMapping("/stats")
     public List<BackendServer> stats() {
 

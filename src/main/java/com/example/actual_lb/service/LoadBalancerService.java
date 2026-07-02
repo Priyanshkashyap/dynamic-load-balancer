@@ -18,15 +18,11 @@ public class LoadBalancerService {
     private static final long OPEN_DURATION = 30_000;
 
     public void registerServer(String url) {
-
         servers.put(url, new BackendServer(url,true,0, 0,CircuitState.CLOSED,0));
     }
 
     public List<BackendServer> getAllServers() {
-
-        return new ArrayList<>(
-                servers.values()
-        );
+        return new ArrayList<>(servers.values());
     }
 
     public String getNextServer() {
@@ -69,21 +65,8 @@ public class LoadBalancerService {
         }
         return best;
     }
-    public List<BackendServer>
-    getHealthyServers() {
-
-        return servers.values()
-                .stream()
-
-                .filter(
-                        BackendServer::isHealthy
-                )
-
-                .filter(
-                        this::allowRequest
-                )
-
-                .toList();
+    public List<BackendServer> getHealthyServers() {
+        return servers.values().stream().filter(BackendServer::isHealthy).filter(this::allowRequest).toList(); // this here means  this class ka object that was autoinjected .BackendServer::isHealthy as each stream element doesnt have a name and is a backendserver object
     }
     public void onFailure(
             BackendServer server
@@ -112,45 +95,21 @@ public class LoadBalancerService {
                 CircuitState.CLOSED
         );
     }
-    public boolean allowRequest(
-            BackendServer server
-    ) {
+    public boolean allowRequest(BackendServer server) {
 
-        if (
-                server.getCircuitState()
-                        ==
-                        CircuitState.CLOSED
-        ) {
+        if (server.getCircuitState() == CircuitState.CLOSED) {
             return true;
         }
+        if (server.getCircuitState() == CircuitState.OPEN) {
 
-        if (
-                server.getCircuitState()
-                        ==
-                        CircuitState.OPEN
-        ) {
-
-            long now =
-                    System.currentTimeMillis();
-
-            if (
-                    now
-                            -
-                            server.getLastFailureTime()
-                            >
-                            OPEN_DURATION
-            ) {
-
-                server.setCircuitState(
-                        CircuitState.HALF_OPEN
-                );
-
+            long now = System.currentTimeMillis();
+            if (now - server.getLastFailureTime() > OPEN_DURATION)
+            {
+                server.setCircuitState(CircuitState.HALF_OPEN);
                 return true;
             }
-
             return false;
         }
-
         return true;
     }
 }

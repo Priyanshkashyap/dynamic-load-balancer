@@ -8,27 +8,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class RateLimiterService {
 
-    private final ConcurrentHashMap<
-            String,
-            TokenBucket
-            >
-            buckets =
-            new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, TokenBucket> buckets = new ConcurrentHashMap<>(); //All read,write,etc. operations can happen concurrently without corrupting the map.
+    private static final int LIMIT = 5;
 
-    private static final int LIMIT =
-            5;
-
-    public boolean allowRequest(
-            String clientIp
-    ) {
-
+    public boolean allowRequest(String clientIp)
+    {
         TokenBucket bucket =
-                buckets.computeIfAbsent( // If the key already exists, it returns the existing value.If the key does not exist, it computes a new value using the provided function, stores it in the map, and returns it.
-                        clientIp,
-                        ip ->
-                                new TokenBucket(
-                                        LIMIT
-                                )
+                buckets.computeIfAbsent( // If the key already exists, it returns the existing value.If the key does not exist, it computes a new value using the provided function, stores it in the map, and returns it.this function only exists for the concurrent hashmap
+                        clientIp, ip -> new TokenBucket(LIMIT)
                 );
 
         return bucket.tryConsume();

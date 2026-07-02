@@ -1,4 +1,5 @@
 package com.example.actual_lb.controller;
+import com.example.actual_lb.service.MetricsService;
 import jakarta.servlet.http.HttpServletRequest;
 import com.example.actual_lb.model.BackendServer;
 import com.example.actual_lb.service.LoadBalancerService;
@@ -15,27 +16,30 @@ public class ProxyController {
 
     @Autowired
     private RestTemplate restTemplate;
-
     @Autowired
     private LoadBalancerService loadBalancerService;
-
     @Autowired
     private RateLimiterService rateLimiterService;
+    @Autowired
+    private MetricsService metricsService; // if other class also injects this they both receive reference to the same object
 
     @GetMapping("/hello")
     public Object forwardRequest(
-            HttpServletRequest request // Receive data from the client request coming into your server
+            HttpServletRequest request
     ) {
 
+        metricsService.recordRequest();
+
         String clientIp =
-                request.getRemoteAddr(); // eturns the IP address of the client that sent the request.
+                request.getRemoteAddr();
 
         if (
                 !rateLimiterService
-                        .allowRequest(
-                                clientIp
-                        )
+                        .allowRequest(clientIp)
         ) {
+
+            metricsService.recordRateLimit();
+
             throw new RuntimeException(
                     "429 Too Many Requests"
             );
@@ -52,6 +56,9 @@ public class ProxyController {
                 : servers
         ) {
 
+            long start =
+                    System.currentTimeMillis();
+
             try {
 
                 server.setActiveConnections(
@@ -66,19 +73,34 @@ public class ProxyController {
                                 Object.class
                         );
 
+                long latency =
+                        System.currentTimeMillis()
+                                - start;
+
+                metricsService.recordSuccess(
+                        server,
+                        latency
+                );
+
                 loadBalancerService
                         .onSuccess(server);
 
                 return response;
+            }
 
-            } catch (Exception e) {
+            catch (Exception e) {
+
+                metricsService.recordFailure(
+                        server
+                );
 
                 loadBalancerService
                         .onFailure(server);
 
                 lastException = e;
+            }
 
-            } finally {
+            finally {
 
                 server.setActiveConnections(
                         server.getActiveConnections()
